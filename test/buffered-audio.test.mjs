@@ -23,7 +23,7 @@ test('gesture unlock is silent; later frame plays real decoded laugh without an 
  assert.equal(h.timers.find(t=>t.ms===1100)?.cancelled,undefined);h.voice.stop();assert.equal(h.nodes[0].live,false);assert.equal(h.gains[0].gain.value,0);
 });
 test('mute during download cancels the pending laugh and cannot start it after decode finishes',async()=>{
- const h=setup();let finish;h.c.decodeAudioData=()=>new Promise(r=>finish=r);h.gesture(()=>h.voice.unlock());await settle();h.voice.laugh({now:0});h.voice.setEnabled(false);h.mixer.setEnabled(false);finish({duration:15});await settle();
+ const h=setup();let finish;h.c.decodeAudioData=()=>new Promise(r=>finish=r);h.gesture(()=>h.voice.unlock());await settle();h.voice.laugh({now:0});await settle();h.voice.setEnabled(false);h.mixer.setEnabled(false);finish({duration:15});await settle();
  assert.equal(h.nodes.length,0);assert.equal(h.mixer.voice,null);assert.equal(h.errors.length,0);assert.equal(h.voice.playing,false);
 });
 test('toggle back on and interrupted-context recovery neither replay stale audio nor re-download it',async()=>{
@@ -43,10 +43,10 @@ test('failed download can retry and audio is not queued without a gesture unlock
 });
 
 function recordedChannels(){
- const h=setup();let time=0,owned=true;
- const createAudio=url=>h.mixer.trackAudio(new BufferedAudio(url,{getContext:()=>h.c,fetchAudio:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(4)})}));
+ const h=setup();let time=0,owned=true,voiceFetches=0;
+ const createAudio=url=>h.mixer.trackAudio(new BufferedAudio(url,{getContext:()=>h.c,fetchAudio:async()=>{voiceFetches++;return {ok:true,arrayBuffer:async()=>new ArrayBuffer(4)}}}));
  const bossVoice=new BossAudio({createAudio,now:()=>time}),itemVoice=new ItemAudio({createAudio,now:()=>time,isBusy:()=>h.voice.playing||!!bossVoice.current,canPlay:key=>ownsItemVoice({has:()=>owned},key)});
- return {...h,bossVoice,itemVoice,soundMix:h.mixer,setTime:t=>time=t,setOwned:v=>owned=v};
+ return {...h,bossVoice,itemVoice,soundMix:h.mixer,setTime:t=>time=t,setOwned:v=>owned=v,get voiceFetches(){return voiceFetches}};
 }
 test('all item and boss recordings use a silently unlocked shared context and play later without native autoplay grants',async()=>{
  const h=recordedChannels();h.gesture(()=>{h.voice.unlock();h.bossVoice.unlock();h.itemVoice.unlock()});await settle();assert.equal(h.nodes.length,0);
@@ -59,4 +59,17 @@ test('shared-context item ownership, mute, laugh priority and later recovery rem
 });
 test('muting delayed item and boss decodes cannot start stale recordings when downloads finish',async()=>{
  for(const type of ['itemVoice','bossVoice']){const h=recordedChannels(),resolve=[];h.c.decodeAudioData=()=>new Promise(r=>resolve.push(r));h.gesture(()=>setGameSound(true,h));await settle();if(type==='itemVoice')h.itemVoice.request('man');else h.bossVoice.request('bull','charge',{});setGameSound(false,h);resolve.forEach(r=>r({duration:4}));await settle();assert.equal(h.nodes.length,0);assert.equal(h[type].current,null);assert.equal(h.mixer.voice,null)}
+});
+
+test('recordings stay off the wire until a cue actually plays',async()=>{
+ const h=recordedChannels();
+ h.gesture(()=>{h.voice.unlock();h.bossVoice.unlock();h.itemVoice.unlock()});
+ await settle();
+ assert.equal(h.voiceFetches,0,'gesture unlock must not download every voice');
+ assert.equal(h.nodes.length,0);
+ h.a.preload='auto';await settle();
+ assert.equal(h.voiceFetches,0,'preload=auto is a no-op for lazy buffered clips');
+ h.setTime(10000);assert.ok(h.itemVoice.request('man'));await settle();
+ assert.equal(h.voiceFetches,1,'first item line fetches only its own clip');
+ h.itemVoice.stop();
 });
