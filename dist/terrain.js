@@ -75,11 +75,11 @@ function field(room,target,flying=false){
   data.target=end;data.dist=dist;
  }return data;
 }
-export function safeSpot(room,x,y,r=24,avoid=null,used=[],score=null){
+export function safeSpot(room,x,y,r=24,avoid=null,used=[],score=null,minPlayer=150){
  if(!room.layoutId)return {x,y};
  const {free,dist}=field(room,{x:95,y:300});let best=null,d=Infinity;
  for(let i=0;i<free.length;i++)if(free[i]&&dist[i]>=0){const p=point(i);
-  if(blocked(room,p.x,p.y,r)||(room.hazards||[]).some(h=>h.kind!=='belt'&&overlaps(h,p.x,p.y,r))||avoid&&Math.hypot(p.x-avoid.x,p.y-avoid.y)<150||used.some(e=>Math.hypot(p.x-e.x,p.y-e.y)<60))continue;
+  if(blocked(room,p.x,p.y,r)||(room.hazards||[]).some(h=>h.kind!=='belt'&&overlaps(h,p.x,p.y,r))||avoid&&Math.hypot(p.x-avoid.x,p.y-avoid.y)<minPlayer||used.some(e=>Math.hypot(p.x-e.x,p.y-e.y)<60))continue;
   const n=(p.x-x)**2+(p.y-y)**2+(score?score(p):0);if(n<d){best=p;d=n}
  }
  return best||{x:95,y:300};
@@ -164,7 +164,7 @@ export function spawnEncounter(g,room){
  const profile=describeEncounter(room,g.floor);room.encounterVariant=profileIndex(room);
  const types=encounterRoster(room,g.floor,count),enemies=[];
  for(let i=0;i<count;i++){
-  const target=formationTarget(profile,i,count,g.p),p=safeSpot(room,target.x,target.y,24,g.p,enemies,positionCost(room,types[i],g.p));
+  const target=formationTarget(profile,i,count,g.p),p=safeSpot(room,target.x,target.y,24,g.p,enemies,positionCost(room,types[i],g.p),240);
   const enemy=g.spawn(types[i],p.x,p.y);
   // Stagger the opening fire; a battery must not release every shot at once.
   enemy.cd=Math.max(enemy.cd,.65+(i%4)*.22);enemies.push(enemy);

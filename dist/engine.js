@@ -37,8 +37,19 @@ export class Game{
  offer(title){const available=ITEMS.filter(i=>!this.has(i.id));for(let i=available.length-1;i>0;i--){const j=Math.floor(this.random()*(i+1));[available[i],available[j]]=[available[j],available[i]];}this.choices=available.slice(0,3);this.mode='choice';this.emit('choice',{title,choices:this.choices});}
  choose(id){if(this.mode!=='choice'||!this.choices.some(i=>i.id===id))return false;this.items.push(id);const p=this.p;applyItemStats(p,id);if(id==='milk')p.hp=Math.min(p.maxHp,p.hp+3);if(id==='lotus'){p.shield=true;p.shieldCD=12}this.mode='play';this.emit('item',{id});return true;}
  burst(x,y,color,n=12){for(let i=0;i<n;i++){const a=this.rand(0,Math.PI*2),v=this.rand(25,150);this.particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:this.rand(.25,.7),color,r:this.rand(2,6)})}}
- damageEnemy(e,n){if(e.dead||e.airborne)return;e.hp-=n;e.hit=.1;if(e.hp<=0&&!e.dead){e.dead=true;this.kills++;this.burst(e.x,e.y,e.type==='boss'?'#f4d96f':'#b9d28a',e.type==='boss'?45:14);this.emit('kill');this.onEnemyKilled?.(e);}}
- hurt(){const p=this.p;if(p.inv>0||p.dash>0)return;if(p.shield){p.shield=false;p.shieldCD=12;p.inv=.6;this.burst(p.x,p.y,'#bad37e');this.emit('shield');return}p.hp--;p.inv=1.25;this.emit('hurt');this.burst(p.x,p.y,'#f0a18a',8);if(p.hp<=0){this.mode='dead';this.emit('end',{win:false})}}
+ damageEnemy(e,n){if(e.dead||e.airborne)return;e.hp-=n;e.hit=.1;if(e.type!=='boss')this.burst(e.x,e.y,'#fff2bf',2);if(e.hp<=0&&!e.dead){e.dead=true;this.kills++;this.burst(e.x,e.y,e.type==='boss'?'#f4d96f':'#b9d28a',e.type==='boss'?45:14);this.emit('kill');this.onEnemyKilled?.(e);}}
+ hurt(){const p=this.p;if(p.inv>0||p.dash>0)return;if(p.shield){p.shield=false;p.shieldCD=12;p.inv=.6;this.burst(p.x,p.y,'#bad37e');this.emit('shield');return}p.hp--;p.inv=1.25;this.knockbackFromNearest();this.emit('hurt');this.burst(p.x,p.y,'#f0a18a',8);if(p.hp<=0){this.mode='dead';this.emit('end',{win:false})}}
+ // Contact damage must not leave the frog parked inside the enemy: push it
+ // clear and stagger the threat so the next hit needs a fresh approach.
+ knockbackFromNearest(){
+  const p=this.p,list=(this.room?.enemies||[]).filter(e=>!e.dead);let threat=null,closest=Infinity;
+  for(const e of list){const d=Math.hypot(p.x-e.x,p.y-e.y);if(d<closest){closest=d;threat=e}}
+  if(!threat||closest>100)return;
+  const ux=closest>1?(p.x-threat.x)/closest:(p.face||1),uy=closest>1?(p.y-threat.y)/closest:0,push=Math.min(30,14+(100-closest)*.2);
+  p.x=Math.max(60,Math.min(900,p.x+ux*push));
+  p.y=Math.max(70,Math.min(530,p.y+uy*push));
+  threat.repelled=Math.max(threat.repelled||0,.22);
+ }
  shoot(dx,dy,pet=false){const p=this.p,len=Math.hypot(dx,dy);if(len<.01)return;dx/=len;dy/=len;const x=pet?p.x-35:p.x,y=pet?p.y+25:p.y-6;for(const off of (!pet&&this.has('double')?[-11,11]:[0])){this.bullets.push({x:x-dy*off+dx*20,y:y+dx*off+dy*20,vx:dx*490,vy:dy*490,r:pet?5:this.has('belly')?10:7,life:this.has('tongue')?2.7:1.6,damage:pet?.65:p.damage*(this.has('double')?.7:1),poison:!pet&&this.has('eye'),pierce:!pet&&this.has('tongue'),bounce:this.has('bubble')?2:0,hits:new Set(),pet});}if(!pet)this.emit('shoot');}
  update(dt,input={},playerDt=dt){
  dt=Math.min(dt,.04);playerDt=Math.min(playerDt,.04);if(this.mode!=='play')return;

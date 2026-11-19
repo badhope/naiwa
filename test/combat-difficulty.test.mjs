@@ -25,3 +25,17 @@ test('even thirteen-monster groups fit every layout with safe entry space',()=>{
 test('resource guards also leave room to move at every entrance',()=>{
  for(const type of ['vault','cache'])for(const side of ['left','right','top','bottom']){const g=new Game();g.start();const r=g.rooms.find(r=>r.exists&&r.type===type);r.seed=8;r.locked=false;r.bombLocked=false;g.enter(r.id,side);assert.equal(r.enemies.length,type==='vault'?6:5);assert.ok(r.enemies.every(e=>Math.hypot(e.x-g.p.x,e.y-g.p.y)>=160))}
 });
+
+test('getting hit pushes the frog out of the enemy body instead of parking it there',()=>{
+ const g=new Game();g.start();g.room.type='fight';g.room.clear=false;g.room.obstacles=[];g.room.hazards=[];g.p.x=300;g.p.y=350;g.p.inv=0;g.p.hp=g.p.maxHp;
+ const e=g.spawn('brute',318,350);e.cd=999;e.hp=999;g.room.enemies=[e];
+ g.hurt();
+ assert.equal(g.p.hp,g.p.maxHp-1);
+ assert.ok(Math.hypot(g.p.x-e.x,g.p.y-e.y)>20,'player should be pushed clear of the enemy');
+ assert.ok(e.repelled>.2,'the threat should be staggered after landing a hit');
+});
+test('first floor fight rooms leave at least 240px between the door and every spawn',()=>{
+ const g=room(1,'fight');const p={x:g.p.x,y:g.p.y};
+ assert.ok(g.room.enemies.length>=4);
+ for(const e of g.room.enemies)assert.ok(Math.hypot(e.x-p.x,e.y-p.y)>=240);
+});
