@@ -52,3 +52,10 @@ test('real controllers: item, queued dual bosses, active laugh and revive remain
  now=3500;bossVoice.current.audio.ended=true;bossVoice.update(true);check();assert.equal(bossVoice.current.key,'meishu');playPlayerLaugh(channels,{now:4000});check();assert.equal(mixer.cue(),false);
  voice.stop();bossVoice.stop();itemVoice.stop();const revive=createAudio('revive');revive.play();check();assert.equal(mixer.cue(),false);revive.pause();check();
 });
+
+test('changing volume before the first play does not compound the clip level',()=>{
+ const {mixer}=setup(),a=mixer.createAudio('item');a.volume=.52;
+ mixer.setVolume(.5);assert.ok(Math.abs(a.volume-.26)<1e-9);
+ a.play();assert.ok(Math.abs(a.volume-.26)<1e-9,'first play must not multiply the already-scaled level again');
+ mixer.setVolume(1);assert.ok(Math.abs(a.volume-.52)<1e-9,'restoring 100% restores the shipped mix');
+});

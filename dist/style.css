@@ -13,3 +13,13 @@
 
 .map{grid-template-columns:repeat(5,1fr);width:100%;gap:4px}.map-cell{height:27px}.map-cell.fog{visibility:hidden}.resources{padding:10px 14px;margin-bottom:9px;border-radius:9px;background:#e8edda;color:#4e6545;font:600 12px system-ui;font-variant-numeric:tabular-nums}.action-guide{display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap}.action-guide button{border:1px solid #cbd6bb;border-radius:8px;background:#eef1df;padding:9px 13px;touch-action:none;font-size:11px}@media(max-width:780px){.resources{font-size:10px;padding:9px 8px}.action-guide{gap:6px}.action-guide button{padding:12px 10px}.map{width:100%}.map-cell{height:23px}}
 .modal{max-height:calc(100% - 20px);overflow:auto}
+
+/* Settings sheet */
+.settings-modal .settings-row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.settings-row label{flex:0 0 52px;font-weight:700}
+.settings-row input[type=range]{flex:1;accent-color:var(--focus)}
+.settings-row output{flex:0 0 44px;text-align:right;font-variant-numeric:tabular-nums}
+.settings-row select{flex:1;padding:6px 8px;border:2px solid var(--frame-dark);border-radius:6px;background:#fffdf3;font:inherit}
+.settings-toggle input{width:18px;height:18px;accent-color:var(--focus)}
+.settings-note{font-size:12px;line-height:1.5;color:#5d6b5f;margin:12px 0 4px}
+.settings-modal .primary{margin-top:8px}
