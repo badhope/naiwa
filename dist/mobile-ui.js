@@ -108,12 +108,12 @@ export function setupMobileUI({suspend,resume,resetInput,pause,notify,canOpenMap
  const buttons=[...document.querySelectorAll('[data-mobile-panel]')];let suspended=false,previousFocus=null;
  const menu=document.querySelector('#mobileMenuLayer'),menuToggle=document.querySelector('#mobileMenuToggle');let menuSuspended=false;
  function menuLabels(){for(const [target,source] of [['menuSound','sound']]){const b=document.getElementById(target),s=document.getElementById(source);b.textContent=s.textContent}scaleReadout()}
- function closeMenu({keepPaused=false}={}){if(menu.hidden)return;menu.hidden=true;menuToggle.setAttribute('aria-expanded','false');document.body.classList.remove('mobile-panel-open');if(menuSuspended&&!keepPaused)resume();menuSuspended=false;resetInput();menuToggle.focus({preventScroll:true})}
+ function closeMenu(){if(menu.hidden)return;menu.hidden=true;menuToggle.setAttribute('aria-expanded','false');document.body.classList.remove('mobile-panel-open');if(menuSuspended)resume();menuSuspended=false;resetInput();menuToggle.focus({preventScroll:true})}
  menuToggle.onclick=()=>{if(!menu.hidden){closeMenu();return}close();menuSuspended=suspend();resetInput();menu.hidden=false;menuToggle.setAttribute('aria-expanded','true');document.body.classList.add('mobile-panel-open');menuLabels();document.querySelector('#mobileMenuClose').focus({preventScroll:true})};
  document.querySelector('#mobileMenuClose').onclick=closeMenu;
  menu.addEventListener('click',e=>{if(e.target===menu)closeMenu()});
  menu.querySelectorAll('[data-menu-action]').forEach(b=>b.onclick=()=>{const action=b.dataset.menuAction;if(action==='sound'){document.getElementById(action).click();menuLabels();return}if(action==='rotate'){flipSideways();return}closeMenu();if(['map','stats','inventory'].includes(action))document.querySelector(`[data-mobile-panel="${action}"]`).click();else document.getElementById(action).click()});
- function close({keepPaused=false}={}){if(!aside.dataset.openPanel)return;delete aside.dataset.openPanel;aside.removeAttribute('role');aside.removeAttribute('aria-modal');document.body.classList.remove('mobile-panel-open');backdrop.hidden=true;buttons.forEach(b=>b.setAttribute('aria-expanded','false'));resetInput();if(suspended&&!keepPaused)resume();suspended=false;previousFocus?.focus({preventScroll:true})}
+ function close(){if(!aside.dataset.openPanel)return;delete aside.dataset.openPanel;aside.removeAttribute('role');aside.removeAttribute('aria-modal');document.body.classList.remove('mobile-panel-open');backdrop.hidden=true;buttons.forEach(b=>b.setAttribute('aria-expanded','false'));resetInput();if(suspended)resume();suspended=false;previousFocus?.focus({preventScroll:true})}
  buttons.forEach(button=>button.addEventListener('click',()=>{
   if(aside.dataset.openPanel===button.dataset.mobilePanel){close();return}
   if(!aside.dataset.openPanel){previousFocus=media.matches?button:document.activeElement;suspended=suspend();resetInput()}
@@ -142,5 +142,5 @@ export function setupMobileUI({suspend,resume,resetInput,pause,notify,canOpenMap
  for(const type of ['selectstart','contextmenu','dragstart'])document.querySelector('.game-column').addEventListener(type,e=>e.preventDefault());
  document.querySelector('#game').addEventListener('pointerdown',e=>e.preventDefault());
  viewport=installMobileViewport({media,resetInput});
- return {closePanels(){if(!menu.hidden)closeMenu({keepPaused:true});else if(aside.dataset.openPanel)close({keepPaused:true})},isOpen(){return !menu.hidden||!!aside.dataset.openPanel}};
+ return {closePanels(){if(!menu.hidden)closeMenu();else if(aside.dataset.openPanel)close()},isOpen(){return !menu.hidden||!!aside.dataset.openPanel}};
 }

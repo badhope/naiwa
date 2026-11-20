@@ -20,6 +20,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Syntax check shipped modules
-        run: node --check dist/*.js
+        run: node scripts/check-syntax.mjs dist
       - name: Run canonical test suite
         run: npm test
