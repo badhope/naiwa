@@ -1717,6 +1717,7 @@ function holding() {
 }
 function loadArt(image, file) {
   image.assetName = file;
+  image.crossOrigin = "anonymous";
   const url = assetUrl(file);
   if (holding()) queue.push(() => {
     image.src = url;
