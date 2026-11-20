@@ -3,7 +3,7 @@ import {drawAnimatedEnemy} from './sprite-art.js';
 
 // A boss room is a short, forced 1v1. The dungeon stays underneath; this layer
 // owns only the duel state and its small touch/keyboard surface.
-const W=960,H=600,GROUND=468;
+const W=960,H=600,GROUND=410;
 const NAMES=['奶瓶收缴员','静音箱','分拣巨钳','拼装奶偶','牛来与美鼠'];
 const TIPS=['先看它的起手，再决定是跳还是替身。','不要一直贴脸，重击后的硬直够它反打。','它抬手时往它身后走，扇形弹会空。','血量过半会加速，留一次替身给狂暴。','两个都倒下了，门才会开。'];
 
@@ -18,7 +18,7 @@ function makeOverlay(){
  const node=document.createElement('div');
  node.className='duel-overlay';
  node.setAttribute('aria-hidden','true');
- node.innerHTML='<canvas aria-label="Boss 房横版决斗"></canvas><div class="duel-controls" role="group" aria-label="决斗操作"><button type="button" data-duel-hold="left" aria-label="向左移动">←</button><button type="button" data-duel-hold="right" aria-label="向右移动">→</button><button type="button" data-duel-action="jump">跳</button><button type="button" data-duel-action="light">普攻</button><button type="button" data-duel-action="heavy">重击</button><button type="button" data-duel-action="dash">替身</button><button type="button" class="special" data-duel-action="skill">技能</button><button type="button" class="special" data-duel-action="ultimate">奥义</button></div>';
+ node.innerHTML='<canvas aria-label="Boss 房横版决斗"></canvas><div class="duel-controls" role="group" aria-label="决斗操作"><div class="duel-move" role="group" aria-label="移动与跳跃"><button type="button" data-duel-hold="left" aria-label="向左移动">←</button><button type="button" data-duel-hold="right" aria-label="向右移动">→</button><button type="button" class="duel-jump" data-duel-action="jump">跳</button></div><div class="duel-actions" role="group" aria-label="攻击与技能"><button type="button" class="special" data-duel-action="skill">技能</button><button type="button" class="special" data-duel-action="ultimate">奥义</button><button type="button" data-duel-action="dash">替身</button><button type="button" class="duel-primary" data-duel-action="light">普攻</button><button type="button" data-duel-action="heavy">重击</button></div></div>';
  wrap.append(node);
  return {node,canvas:node.querySelector('canvas'),ctx:node.querySelector('canvas').getContext('2d',{alpha:true})};
 }
