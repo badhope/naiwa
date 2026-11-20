@@ -65,3 +65,21 @@ test('master volume zero silences synthesized cues as well as recorded clips',()
  const {mixer,nodes}=setup();mixer.setVolume(0);assert.equal(mixer.cue(520,.05),false);assert.equal(nodes.length,0,'no oscillator is created at zero master');
  mixer.setVolume(.5);mixer.cue(520,.05);assert.equal(nodes.length,1);assert.ok(Math.abs(mixer.tone.gain.gain.value-.0125)<1e-9,'cue level is scaled by master volume');
 });
+
+test('a reused laugh keeps each action own base volume and still scales by master',()=>{
+ const {mixer,clips}=setup();
+ const voice=new GameAudio({createAudio:url=>mixer.createAudio(url),schedule:()=>1,cancel(){}});
+ voice.laugh({long:false,now:1000});
+ const clip=clips[0];
+ assert.ok(Math.abs(clip.volume-.35)<1e-9,'short laugh base');
+ clip.ended=true;
+ voice.laugh({long:true,now:2500});
+ assert.ok(Math.abs(clip.volume-.55)<1e-9,'long laugh base is not overwritten by the first play');
+ mixer.setVolume(.5);
+ clip.ended=true;
+ voice.laugh({long:false,now:4000});
+ assert.ok(Math.abs(clip.volume-.175)<1e-9,'short laugh .35 × master .5');
+ clip.ended=true;
+ voice.laugh({long:true,now:5000});
+ assert.ok(Math.abs(clip.volume-.275)<1e-9,'long laugh .55 × master .5');
+});

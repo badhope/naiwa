@@ -5,13 +5,14 @@ const MIN_SHOW = 620;
 const FADE = 320;
 
 export function createLoadingVeil(node, options = {}) {
-  if (!node) return {show() {}, hide() {}, bootDone() {}, isVisible: () => false};
+  if (!node) return {show() {}, hide() {}, bootDone() {}, isVisible: () => false, isBlocking: () => false};
   const minShow = options.minShow || MIN_SHOW;
   const fade = options.fade || FADE;
   const now = options.now || (() => performance.now());
   const label = node.querySelector('[data-loading-label]');
   let shownAt = now();
   let visible = true;
+  let blocking = true;
   let hideTimer = 0;
   let fadeTimer = 0;
 
@@ -24,6 +25,7 @@ export function createLoadingVeil(node, options = {}) {
     clearTimeout(fadeTimer);
     hideTimer = fadeTimer = 0;
     visible = true;
+    blocking = true;
     node.hidden = false;
     node.classList.remove('is-hiding');
     node.classList.add('is-visible');
@@ -41,6 +43,7 @@ export function createLoadingVeil(node, options = {}) {
     node.setAttribute('aria-busy', 'false');
     fadeTimer = setTimeout(() => {
       node.hidden = true;
+      blocking = false;
       node.classList.remove('is-hiding');
       document.documentElement?.removeAttribute?.('data-loading');
     }, fade);
@@ -60,5 +63,5 @@ export function createLoadingVeil(node, options = {}) {
     hide();
   }
 
-  return {show, hide, bootDone, isVisible: () => visible};
+  return {show, hide, bootDone, isVisible: () => visible, isBlocking: () => blocking};
 }

@@ -6,7 +6,7 @@ export class SoundMixer {
   this.makeAudio=createAudio;this.makeContext=createContext;this.voice=null;this.tone=null;this.context=null;this.enabled=true;this.batching=false;this.pending=null;
   // Master volume multiplies every clip without losing the per-clip mix that the
   // game tuned (item lines .38, boss lines .52, laugh .48).
-  this.master=1;this.tracked=new Set();this.baseVolume=new WeakMap();
+  this.master=1;this.tracked=new Set();this.baseVolume=new WeakMap();this.lastApplied=new WeakMap();
  }
  getContext(){return this.context??=this.makeContext()}
  createBufferedAudio(url){return this.trackAudio(new BufferedAudio(url,{getContext:()=>this.getContext()}))}
@@ -17,8 +17,9 @@ export class SoundMixer {
   a.pause=()=>{ticket++;a.muted=true;pause();release()};
   a.play=()=>{
    const attempt=++ticket;
-   // Remember the clip's own level once, then keep scaling it by the master volume.
-   if(!this.baseVolume.has(a))this.baseVolume.set(a,a.volume);
+   // A reusable clip can set a different level for each action (short laugh .35,
+   // long laugh .55). Capture that new base before applying the master volume.
+   if(a.volume!==this.lastApplied.get(a))this.baseVolume.set(a,a.volume);
    this.applyVolume(a);
    // Silent revival is real playback with a progress clock. Its muted flag
    // must NOT be confused with a throwaway mobile gesture-priming play.
@@ -34,7 +35,7 @@ export class SoundMixer {
  setEnabled(value){this.enabled=!!value;if(!value){if(this.voice)this.voice.muted=true;this.stopTone()}}
  // 0 mutes every clip; 1 keeps the shipped mix untouched.
  setVolume(value){this.master=Math.max(0,Math.min(1,Number.isFinite(value)?value:1));for(const a of this.tracked)this.applyVolume(a)}
- applyVolume(a){if(!this.baseVolume.has(a))this.baseVolume.set(a,a.volume);const base=this.baseVolume.get(a),next=Math.max(0,Math.min(1,base*this.master));if(a.volume!==next)a.volume=next}
+ applyVolume(a){if(!this.baseVolume.has(a))this.baseVolume.set(a,a.volume);const base=this.baseVolume.get(a),next=Math.max(0,Math.min(1,base*this.master));this.lastApplied.set(a,next);if(a.volume!==next)a.volume=next}
  beginFrame(){this.batching=true;this.pending=null}
  endFrame(){const cue=this.pending;this.batching=false;this.pending=null;if(cue)this.playTone(cue)}
  cue(freq=500,dur=.07,type='sine',volume=.025,priority=1){
