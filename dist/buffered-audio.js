@@ -2,11 +2,14 @@ import {artReady} from './asset-url.js';
 // Gameplay recordings use the gesture-unlocked Web Audio context. Unlike a
 // muted HTMLAudio preload, this does not rely on per-element autoplay grants.
 export class BufferedAudio extends EventTarget {
- constructor(url,{getContext,fetchAudio=url=>artReady().then(()=>fetch(url))}={}){
-  super();this.url=url;this.getContext=getContext;this.fetchAudio=fetchAudio;
+ constructor(url,{getContext,fetchAudio=url=>artReady().then(()=>fetch(url)),eager=false}={}){
+  super();this.url=url;this.getContext=getContext;this.fetchAudio=fetchAudio;this.eager=!!eager;
   this.paused=true;this.ended=false;this._muted=true;this._volume=1;this.offset=0;this.serial=0;
  }
- set preload(value){if(value==='auto')this.load().catch(()=>{})}
+ // Recordings are heavy (12 mp3, ~426KB). They stay off the wire until a cue
+ // actually plays; `eager` exists for callers that deliberately want them warm.
+ set preload(value){if(value==='auto'&&this.eager)this.load().catch(()=>{})}
+ warm(){return this.load()}
  get muted(){return this._muted}
  set muted(value){this._muted=!!value;this.syncGain()}
  get volume(){return this._volume}
@@ -22,7 +25,7 @@ export class BufferedAudio extends EventTarget {
  }
  unlock(){
   // Only called by the UI's gesture handlers. No recording is played here.
-  try{const c=this.getContext();if(c.state!=='running'){this.unlocking=Promise.resolve(c.resume());this.unlocking.catch(()=>{})}this.load().catch(()=>{})}catch{}
+  try{const c=this.getContext();if(c.state!=='running'){this.unlocking=Promise.resolve(c.resume());this.unlocking.catch(()=>{})}}catch{}
  }
  async play(){
   const ticket=++this.serial,c=this.getContext();this.paused=false;this.ended=false;
