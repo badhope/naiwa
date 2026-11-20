@@ -59,3 +59,9 @@ test('changing volume before the first play does not compound the clip level',()
  a.play();assert.ok(Math.abs(a.volume-.26)<1e-9,'first play must not multiply the already-scaled level again');
  mixer.setVolume(1);assert.ok(Math.abs(a.volume-.52)<1e-9,'restoring 100% restores the shipped mix');
 });
+
+
+test('master volume zero silences synthesized cues as well as recorded clips',()=>{
+ const {mixer,nodes}=setup();mixer.setVolume(0);assert.equal(mixer.cue(520,.05),false);assert.equal(nodes.length,0,'no oscillator is created at zero master');
+ mixer.setVolume(.5);mixer.cue(520,.05);assert.equal(nodes.length,1);assert.ok(Math.abs(mixer.tone.gain.gain.value-.0125)<1e-9,'cue level is scaled by master volume');
+});

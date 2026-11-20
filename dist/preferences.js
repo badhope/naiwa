@@ -5,6 +5,8 @@ export const STORAGE_KEY='naiwa-preferences';
 // so a weaker phone can pick 1× and give up sharpness instead of frames.
 export const QUALITY_LEVELS={battery:1,standard:1.5,sharp:2};
 export const DEFAULT_PREFERENCES=Object.freeze({volume:1,shake:1,quality:'sharp',gamepad:true});
+// Accessing localStorage can itself throw on opaque/restricted host pages.
+export function safeStorage(view=globalThis){try{return view?.localStorage??null}catch{return null}}
 const has=key=>Object.prototype.hasOwnProperty.call(QUALITY_LEVELS,key);
 export function normalizePreferences(raw){
  const source=raw&&typeof raw==='object'?raw:{};

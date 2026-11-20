@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DEFAULT_PREFERENCES,normalizePreferences,readPreferences,writePreferences,renderCap,STORAGE_KEY} from '../dist/preferences.js';
+import {DEFAULT_PREFERENCES,normalizePreferences,readPreferences,writePreferences,renderCap,safeStorage,STORAGE_KEY} from '../dist/preferences.js';
 
 test('preferences clamp out-of-range values and fall back to defaults',()=>{
  assert.deepEqual(normalizePreferences(undefined),{...DEFAULT_PREFERENCES});
@@ -33,4 +33,12 @@ test('preferences survive a round trip and broken storage never throws',()=>{
  const throwing={getItem(){throw new Error('blocked')},setItem(){throw new Error('blocked')}};
  assert.doesNotThrow(()=>writePreferences(prefs,throwing));
  assert.deepEqual(readPreferences(throwing),{...DEFAULT_PREFERENCES});
+});
+
+
+test('a restricted host may throw while handing over localStorage; reading and writing still fall back',()=>{
+ const view={};Object.defineProperty(view,'localStorage',{get(){throw new Error('SecurityError')}});
+ assert.equal(safeStorage(view),null);
+ assert.deepEqual(readPreferences(safeStorage(view)),{...DEFAULT_PREFERENCES});
+ assert.doesNotThrow(()=>writePreferences({volume:.5},safeStorage(view)));
 });
